@@ -13,8 +13,14 @@ export const getCards = (req: Request, res: Response, next: NextFunction) => {
 export const createCard = (req: ExtendedRequest, res: Response, next: NextFunction) => {
   const { name, link } = req.body;
   return Card.create({ name, link, owner: req.user?._id })
-    .then((card) => res.send({ data: card }))
-    .catch(next);
+    .then((card) => res.status(201).send({ data: card }))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(CustomError.BadRequest(err.message));
+      } else {
+        next();
+      }
+    });
 };
 
 export const deleteCard = (
@@ -30,7 +36,13 @@ export const deleteCard = (
       .then((deletedCard) => res.send({ data: deletedCard }))
       .catch(next);
   })
-  .catch(() => { next(CustomError.BadRequest('Неверные данные карточки')); });
+  .catch((err) => {
+    if (err.name === 'CastError') {
+      next(CustomError.BadRequest('Неверные данные карточки'));
+    } else {
+      next();
+    }
+  });
 
 export const likeCard = (
   req: ExtendedRequest,
@@ -47,7 +59,13 @@ export const likeCard = (
     }
     res.send({ data: card });
   })
-  .catch(() => { next(CustomError.BadRequest('Неверные данные карточки')); });
+  .catch((err) => {
+    if (err.name === 'CastError') {
+      next(CustomError.BadRequest('Неверные данные карточки'));
+    } else {
+      next();
+    }
+  });
 
 export const deleteLikeCard = (
   req: ExtendedRequest,
@@ -64,4 +82,10 @@ export const deleteLikeCard = (
     }
     res.send({ data: card });
   })
-  .catch(() => { next(CustomError.BadRequest('Неверные данные карточки')); });
+  .catch((err) => {
+    if (err.name === 'CastError') {
+      next(CustomError.BadRequest('Неверные данные карточки'));
+    } else {
+      next();
+    }
+  });

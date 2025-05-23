@@ -38,31 +38,49 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
       password: hash,
     }))
     .then((user) => {
-      res.send({ data: user });
+      res.status(201).send({ data: user });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(CustomError.BadRequest(err.message));
+      } else {
+        next();
+      }
+    });
 };
 
 export const updateUser = (req: ExtendedRequest, res: Response, next: NextFunction) => {
   const { name, about } = req.body;
-  return User.findByIdAndUpdate(req.user?._id, { name, about }, { new: true })
+  return User.findByIdAndUpdate(req.user?._id, { name, about }, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
         throw CustomError.NotFound('Пользователь не найден');
       }
       res.send({ data: user });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(CustomError.BadRequest(err.message));
+      } else {
+        next();
+      }
+    });
 };
 
 export const updateAvatar = (req: ExtendedRequest, res: Response, next: NextFunction) => {
   const { avatar } = req.body;
-  return User.findByIdAndUpdate(req.user?._id, { avatar }, { new: true })
+  return User.findByIdAndUpdate(req.user?._id, { avatar }, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
         throw CustomError.NotFound('Пользователь не найден');
       }
       res.send({ data: user });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(CustomError.BadRequest(err.message));
+      } else {
+        next();
+      }
+    });
 };
