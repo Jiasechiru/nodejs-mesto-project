@@ -18,7 +18,7 @@ export const createCard = (req: ExtendedRequest, res: Response, next: NextFuncti
       if (err.name === 'ValidationError') {
         next(CustomError.BadRequest(err.message));
       } else {
-        next();
+        next(err);
       }
     });
 };
@@ -43,7 +43,7 @@ export const deleteCard = (
     if (err.name === 'CastError') {
       next(CustomError.BadRequest('Неверные данные карточки'));
     } else {
-      next();
+      next(err);
     }
   });
 
@@ -66,7 +66,7 @@ export const likeCard = (
     if (err.name === 'CastError') {
       next(CustomError.BadRequest('Неверные данные карточки'));
     } else {
-      next();
+      next(err);
     }
   });
 
@@ -89,6 +89,6 @@ export const deleteLikeCard = (
     if (err.name === 'CastError') {
       next(CustomError.BadRequest('Неверные данные карточки'));
     } else {
-      next();
+      next(err);
     }
   });

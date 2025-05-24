@@ -5,6 +5,8 @@ import { ExtendedRequest } from '../middlewares/auth';
 import User from '../models/user';
 import CustomError from '../errors/errors';
 
+const { JWT_SECRET = 'aaab' } = process.env;
+
 export const getUsers = (req: Request, res: Response, next: NextFunction) => {
   User.find({}).then((users) => { res.send({ data: users }); })
     .catch(next);
@@ -39,13 +41,17 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
       password: hash,
     }))
     .then((user) => {
-      res.status(201).send({ data: user });
+      const userObject = user.toObject();
+      const { password, ...userWithoutPassword } = userObject;
+      res.status(201).send({ data: userWithoutPassword });
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(CustomError.BadRequest(err.message));
+      } else if (err.message.includes('E11000')) {
+        next(CustomError.Conflict('Пользователь с таким email уже существует'));
       } else {
-        next();
+        next(err);
       }
     });
 };
@@ -63,7 +69,7 @@ export const updateUser = (req: ExtendedRequest, res: Response, next: NextFuncti
       if (err.name === 'ValidationError') {
         next(CustomError.BadRequest(err.message));
       } else {
-        next();
+        next(err);
       }
     });
 };
@@ -81,7 +87,7 @@ export const updateAvatar = (req: ExtendedRequest, res: Response, next: NextFunc
       if (err.name === 'ValidationError') {
         next(CustomError.BadRequest(err.message));
       } else {
-        next();
+        next(err);
       }
     });
 };
@@ -102,7 +108,7 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
         });
     })
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, 'aaab', { expiresIn: '7d' });
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' });
       res.cookie('token', token, { httpOnly: true });
       res.send({ message: 'OK' });
     })

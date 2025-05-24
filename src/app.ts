@@ -9,6 +9,8 @@ import unknownUrl from './controllers/unknownurl';
 import { rateLimit } from 'express-rate-limit'
 import { createUser, login } from './controllers/users';
 import { requestLogger, errorLogger } from './middlewares/logger';
+import { errors } from 'celebrate';
+import { regValidator, loginValidator } from './middlewares/requestValidators';
 
 const { PORT = 3000, DB_URL = 'mongodb://localhost:27017/mestodb' } = process.env;
 
@@ -29,19 +31,21 @@ app.use(cookieParser());
 
 app.use(requestLogger);
 
-app.post('/signin', login);
-app.post('/signup', createUser);
+app.post('/signin', loginValidator, login);
+app.post('/signup', regValidator, createUser);
 
 app.use(authMiddleware)
 
 app.use('/users', userRouter);
 app.use('/cards', cardRouter);
 
+app.use('*', unknownUrl);
+
 app.use(errorLogger);
 
-app.use(errorHandler);
+app.use(errors());
 
-app.use('*', unknownUrl);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Сервер запущен на ${PORT} порту`);
