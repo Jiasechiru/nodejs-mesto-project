@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { ExtendedRequest } from '../middlewares/hardcodeauth';
+import { ExtendedRequest } from '../middlewares/auth';
 import Card from '../models/card';
 import CustomError from '../errors/errors';
 
@@ -24,13 +24,16 @@ export const createCard = (req: ExtendedRequest, res: Response, next: NextFuncti
 };
 
 export const deleteCard = (
-  req: Request,
+  req: ExtendedRequest,
   res: Response,
   next: NextFunction,
 ) => Card.findById(req.params.cardId)
   .then((card) => {
     if (!card) {
       throw CustomError.NotFound('Карточка не найдена');
+    }
+    if (card.owner.toString() !== req.user?._id.toString()) {
+      throw CustomError.Forbidden('Вы не можете удалить карточку другого пользователя');
     }
     Card.findByIdAndDelete(req.params.cardId)
       .then((deletedCard) => res.send({ data: deletedCard }))

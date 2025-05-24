@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { ExtendedRequest } from '../middlewares/hardcodeauth';
+import { ExtendedRequest } from '../middlewares/auth';
 import User from '../models/user';
 import CustomError from '../errors/errors';
 
@@ -83,4 +84,38 @@ export const updateAvatar = (req: ExtendedRequest, res: Response, next: NextFunc
         next();
       }
     });
+};
+
+export const login = (req: Request, res: Response, next: NextFunction) => {
+  const { email, password } = req.body;
+  return User.findOne({ email }).select('+password')
+    .then((user) => {
+      if (!user) {
+        throw CustomError.Unauthorized('Неправильные почта или пароль');
+      }
+      return bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) {
+            throw CustomError.Unauthorized('Неправильные почта или пароль');
+          }
+          return user;
+        });
+    })
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'aaab', { expiresIn: '7d' });
+      res.cookie('token', token, { httpOnly: true });
+      res.send({ message: 'OK' });
+    })
+    .catch(next);
+};
+
+export const getCurrentUser = (req: ExtendedRequest, res: Response, next: NextFunction) => {
+  User.findById(req.user?._id)
+    .then((user) => {
+      if (!user) {
+        throw CustomError.NotFound('Пользователь не найден');
+      }
+      res.send({ data: user });
+    })
+    .catch(next);
 };
